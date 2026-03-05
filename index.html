@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Numeros Felices</title>
+<link rel="shortcut icon" href="Tree.png" type="image/png">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Fraunces:ital,wght@0,300;0,700;1,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f2eb;
+    --ink: #1a1814;
+    --accent: #c8441b;
+    --muted: #9c9488;
+    --line: #d8d3c8;
+    --card: #edeae2;
+    --success: #2a6b3a;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 24px;
+    gap: 40px;
+  }
+
+  header {
+    text-align: center;
+  }
+
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    line-height: 1.1;
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .subtitle {
+    margin-top: 8px;
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .input-zone {
+    display: flex;
+	flex-direction:column;
+    gap: 1em;
+    <!-- border: 1.5px solid var(--ink); -->
+    width: 100%;
+    max-width: 360px;
+  }
+
+  input[type="number"] {
+    flex: 1;
+    background: var(--card);
+    border: 1.5px solid var(--ink);
+    outline: none;
+    font-family: 'DM Mono', monospace;
+    font-size: 1.1rem;
+    padding: 14px 18px;
+    color: var(--ink);
+    -moz-appearance: textfield;
+  }
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+  button {
+    background: var(--ink);
+    color: var(--bg);
+    border: none;
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 14px 22px;
+    transition: background 0.15s;
+  }
+  button:hover { background: var(--accent); }
+
+  #resultado {
+    width: 100%;
+    max-width: 560px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .step {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 12px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+    align-items: start;
+    opacity: 0;
+    transform: translateY(6px);
+    animation: fadeIn 0.25s forwards;
+  }
+
+  @keyframes fadeIn {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .step-num {
+    font-size: 0.65rem;
+    color: var(--muted);
+    padding-top: 2px;
+    text-align: right;
+  }
+
+  .step-body { display: flex; flex-direction: column; gap: 3px; }
+
+  .step-label {
+    font-size: 0.68rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .step-expr {
+    font-size: 0.95rem;
+    color: var(--ink);
+    line-height: 1.5;
+  }
+
+  .step-expr .op { color: var(--muted); margin: 0 3px; }
+  .step-expr .val { color: var(--accent); font-weight: 500; }
+  .step-expr .res { color: var(--ink); font-weight: 500; }
+
+  .badge {
+    display: inline-block;
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 2px;
+    margin-top: 4px;
+    align-self: flex-start;
+  }
+
+  .badge-power { background: var(--success); color: #fff; }
+  .badge-repeat { background: var(--accent); color: #fff; }
+  .badge-single { background: var(--card); color: var(--muted); border: 1px solid var(--line); }
+
+  .final-card {
+    margin-top: 14px;
+    padding: 20px 24px;
+    border: 1.5px solid var(--ink);
+    background: var(--card);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    opacity: 0;
+    animation: fadeIn 0.3s 0.1s forwards;
+  }
+
+  .final-card .label {
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .final-card .value {
+    font-family: 'Fraunces', serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .final-card.success .value { color: var(--success); }
+  .final-card.repeat .value { color: var(--accent); }
+
+  .error {
+    font-size: 0.82rem;
+    color: var(--accent);
+    padding: 10px 0;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Números <em>felices</em></h1>
+  <p class="subtitle">Algoritmo de suma de cuadrados de dígitos</p>
+</header>
+
+<div class="input-zone">
+  <input type="number" id="num" placeholder="Ingresa numero > 1" min="2" />
+  <button style="width:100%;display:block;" onclick="ejecutar()">Calcular</button>
+</div>
+
+<div id="resultado"></div>
+
+<script>
+function esPotenciaDeDiez(n) {
+  if (n <= 0) return false;
+  while (n > 1) {
+    if (n % 10 !== 0) return false;
+    n /= 10;
+  }
+  return true;
+}
+
+function obtenerExponenteDeDiez(n) {
+  let exp = 0;
+  while (n > 1) { n /= 10; exp++; }
+  return exp;
+}
+
+function sumaCuadradosDigitos(n) {
+  return String(n).split('').reduce((acc, d) => acc + Math.pow(parseInt(d), 2), 0);
+}
+
+function verificarRepetido(numero, array) {
+	let devolucion=false;
+  if (estaEnArray(numero, array)) {
+    if (String(numero).length === 1) {
+      console.log(`El número ${numero} está repetido!`);
+	  devolucion = true;
+    } else {
+      console.log(`Número de dos cifras repetido: ${numero}!`);
+	  devolucion = true;
+    }
+	return devolucion;
+  }
+}
+
+function estaEnArray(numero, array) {
+  return array.includes(numero);
+}
+
+function ejecutar() {
+  const container = document.getElementById('resultado');
+  container.innerHTML = '';
+  const input = parseInt(document.getElementById('num').value);
+
+  if (isNaN(input) || input <= 1) {
+    container.innerHTML = '<p class="error">⚠ Ingresa un número entero mayor a 1.</p>';
+    return;
+  }
+
+  const pasos = [];
+  const vistos = new Set();
+  let delay = 0;
+
+  // Paso 1: elevar al cuadrado el número original
+  let actual = input * input;
+  pasos.push({
+    label: 'Número inicial al cuadrado',
+    expr: `${input}² = <span class="val">${actual}</span>`,
+    badge: null
+  });
+
+  let terminado = false;
+  let repetido = null;
+  let potencia = null;
+  let maxIter = 200;
+
+  while (!terminado && maxIter-- > 0) {
+    if (esPotenciaDeDiez(actual)) {
+      potencia = actual;
+      terminado = true;
+      break;
+    }
+
+    if (String(actual).length === 1) {
+      // Una cifra: elevar al cuadrado directamente
+      const sig = actual * actual;
+	  
+      pasos.push({
+        label: 'Una cifra → elevar al cuadrado',
+        expr: `${actual}² = <span class="val">${sig}</span>`,
+        badge: 'single'
+      });
+	  
+      actual = sig;	  
+	  
+	  if( pasos.includes(actual)){
+	  console.log("numero incluido"+ pasos.length);
+	  
+}else{ console.log("numero NO incluido"+ pasos[1]);}
+		  <!-- if(verificarRepetido(actual,pasos)){ -->
+			  <!-- terminado = true; -->
+			  <!-- alert("terminaca"); -->
+			  <!-- break; -->
+		  <!-- } -->
+	  <!-- verificarRepetido(actual,pasos); -->
+	  <!-- alert(sig); -->
+	  <!-- alert("pasos"+pasos.length); -->
+	   <!-- if (pasos.includes(sig)) { -->
+        <!-- repetido = sig; -->
+		 <!-- alert("VER" + sig +"--" + terminado); -->
+		<!-- verificarRepetido(sig,pasos); -->
+        <!-- terminado = true; -->
+        <!-- break; -->
+      <!-- }else{ -->
+	   <!-- repetido = sig; -->
+		<!-- const card = document.createElement('div'); -->
+			  <!-- card.className = 'final-card repeat'; -->
+		  <!-- card.style.animationDelay = '0ms'; -->
+		  <!-- card.innerHTML = ` -->
+			<!-- <span class="label">Ciclo detectado</span> -->
+			<!-- <span class="value">Repetición: ${repetido}</span> -->
+			<!-- <span class="step-expr" style="font-size:0.88rem;color:var(--muted)"> -->
+			  <!-- El valor <strong>${repetido}</strong> ya había aparecido. Proceso detenido. -->
+			<!-- </span>`; -->
+			<!-- container.appendChild(card); -->
+			<!-- break; -->
+		<!-- } -->
+	  
+	  
+	  <!-- verifica que se repite  -->
+		  <!-- if(!verificarRepetido(actual,pasos)){-->
+			  <!-- alert("se repite el el " + actual);  -->
+			<!-- repetido = actual; -->
+			<!-- alert("se repite el el actual " + actual + " repetido" + repetido); -->
+			<!-- const card = document.createElement('div'); -->
+			  <!-- card.className = 'final-card repeat'; -->
+		  <!-- card.style.animationDelay = '0ms'; -->
+		  <!-- card.innerHTML = ` -->
+			<!-- <span class="label">Ciclo detectado</span> -->
+			<!-- <span class="value">Repetición: ${repetido}</span> -->
+			<!-- <span class="step-expr" style="font-size:0.88rem;color:var(--muted)"> -->
+			  <!-- El valor <strong>${repetido}</strong> ya había aparecido. Proceso detenido. -->
+			<!-- </span>`; -->
+			
+			
+        <!-- break; -->
+	  
+    } else {
+      // Varias cifras: separar, elevar al cuadrado cada una, sumar
+      const digitos = String(actual).split('').map(Number);
+      const cuadrados = digitos.map(d => d * d);
+      const suma = cuadrados.reduce((a, b) => a + b, 0);
+
+      const exprParts = digitos.map((d, i) => `${d}²<span class="op">=</span>${cuadrados[i]}`).join('<span class="op"> + </span>');
+	  
+	  	  	  
+      pasos.push({
+        label: `Separar dígitos de ${actual}`,
+        expr: `${exprParts} <span class="op">→</span> Σ = <span class="val">${suma}</span>`,
+        badge: null
+      });
+
+      if (vistos.has(suma)) {
+        repetido = suma;
+        terminado = true;
+        break;
+      }
+      vistos.add(suma);
+      actual = suma;
+    }
+  }
+
+  // Renderizar pasos con delay
+  pasos.forEach((p, i) => {
+    const div = document.createElement('div');
+    div.className = 'step';
+    div.style.animationDelay = `${i * 60}ms`;
+
+    let badgeHtml = '';
+    if (p.badge === 'single') badgeHtml = '<span class="badge badge-single">cifra única</span>';
+
+    div.innerHTML = `
+      <span class="step-num">${String(i + 1).padStart(2, '0')}</span>
+      <div class="step-body">
+        <span class="step-label">${p.label}</span>
+        <span class="step-expr">${p.expr}</span>
+        ${badgeHtml}
+      </div>`;
+    container.appendChild(div);
+  });
+
+  // Tarjeta final
+  const totalDelay = pasos.length * 60;
+  setTimeout(() => {
+    const card = document.createElement('div');
+    if (potencia !== null) {
+      const exp = obtenerExponenteDeDiez(potencia);
+      card.className = 'final-card success';
+      card.style.animationDelay = '0ms';
+      card.innerHTML = `
+        <span class="label">Resultado final</span>
+        <span class="value">¡SOY FELIZ!!! Potencia de 10!</span>
+        <span class="step-expr" style="font-size:0.88rem;color:var(--muted)">
+          ${potencia} = 10<sup>${exp}</sup> &nbsp;→ Potencia <strong>${exp}</strong>
+        </span>`;
+    } else if (repetido !== null) {
+      card.className = 'final-card repeat';
+      card.style.animationDelay = '0ms';
+      card.innerHTML = `
+        <span class="label">Ciclo detectado</span>
+        <span class="value">Repetición: ${repetido}</span>
+        <span class="step-expr" style="font-size:0.88rem;color:var(--muted)">
+          El valor <strong>${repetido}</strong> ya había aparecido. Proceso detenido.
+        </span>`;
+    }
+    container.appendChild(card);
+  }, totalDelay);
+}
+
+document.getElementById('num').addEventListener('keydown', e => {
+  if (e.key === 'Enter') ejecutar();
+});
+</script>
+</body>
+</html>
